@@ -5,38 +5,26 @@ import java.util.concurrent.atomic.AtomicBoolean;
     
 
 public class HungryWordMover extends Thread {
-    public String target = "Hungry Word";
+
+    public String target = "Hungry Word"; // target word
 	static AtomicBoolean done ; //REMOVE
 	static AtomicBoolean pause; //REMOVE
-    static int len1;
-    static int len2;
-    static int thislen1;
-    static int thislen2; 
-    static int ylen1;
-    static int ylen2;
-    static int ylen1ad;
-    static int ylen2ad;
-    static int ythislen1;
-    static int ythislen2; 
+    static int thislen1,ylen1,ylen1ad,ythislen1; 
+    static int thislen2,ylen2,ylen2ad,ythislen2;
     static int bothLen;
     static int diffPos;
     static int size = TypingTutorApp.noWords;
     static FallingWord[] fall = new FallingWord[size];
 	static WordMover[] wordsM = new WordMover[size];
-    static Score sco;
+    static Score score;
 
-    public HungryWordMover(FallingWord[] f, WordMover[] w){
+    public HungryWordMover(FallingWord[] f, WordMover[] w,Score sco){
         fall = f;
         wordsM = w;
-        ///sco = score;
+        score = sco;
     }
 	
-	// public static void setFlags(AtomicBoolean d, AtomicBoolean p) {
-	// 	done=d;
-	// 	pause=p;
-	// }
-	
-	public void run() {
+	public synchronized void run() {
 		while(true){
             for (int i = 0; i < size; i++) {
                 for (int j = 0; j < size; j++) {
@@ -46,43 +34,29 @@ public class HungryWordMover extends Thread {
                                 ylen1 = -3 + fall[i].getY();
                                 ylen1ad = ylen1-6;
                                 ylen2 = 3 + fall[i].getY();
-                                ylen2ad = ylen2 + 6;
+
                                 ythislen1 = -6 + fall[j].getY();
+                                ylen2ad = ylen2 + 6;
                                 ythislen2 = 6 + fall[j].getY();
-                               // System.out.println("HUngry word");
-                                if(fall[i].getY()>12){
-                                if((ythislen1>=ylen2&&ythislen1>=ylen2ad)||(ythislen2>=ylen1&&ythislen2>=ylen1ad)){
-                                    //System.out.println("It is hear kodwa");
-                                    // sco.missedWord(); 
-                                    // fall[j].resetWord();
-                                    // break;
-                                   
-                                    bothLen = (target.length()+fall[j].getWord().length());
-                                    diffPos = Math.abs(fall[i].getX()-fall[j].getX());
-                                        // len1 = -target.length()/2 + fall[i].getX();
-                                        // len2 = len1 + fall[i].getWord().length();
-                                        // thislen1 = -fall[j].getWord().length()/2 + fall[j].getX();
-                                        // thislen2 = thislen1 + fall[j].getWord().length();
-                                        if(bothLen<diffPos){
-                                             
-                                    System.out.println("Green Word width "+fall[i].getX());
-                                    System.out.println(fall[j].getWord()+" Word width "+fall[j].getX());
-                                    fall[j].resetWord();
-                                    bothLen = 1000;
-
-                                            // System.out.println("Green Word height "+fall[i].getY()+" width "+fall[i].getX());
-                                            // System.out.println(fall[j].getWord()+" Word height "+fall[j].getY()+" width "+fall[j].getX());
-
-                                            //fall[j].drop(300);
+                                if(fall[i].getX()>940){
+                                    System.out.println("Was greater than eight hundred!");
+                                    fall[i].resetWord();
+                                    score.missedWord();
+                                }
+                                if(fall[i].getY()>25){
+                                    if((ythislen1>=ylen2&&ythislen1>=ylen2ad)||(ythislen2>=ylen1&&ythislen2>=ylen1ad)){
+                                        bothLen = (target.length()+fall[j].getWord().length())/2;
+                                        diffPos = Math.abs(fall[i].getX()-fall[j].getX());
+                                        if(bothLen>=diffPos){
+                                            score.missedWord();
+                                            fall[j].resetWord();
+                                            bothLen = 1000;
                                         }
-                                        
-                                     
-                                        
-
-                                } }
+                                    } 
+                                }
                             } 
                 }	 
-               }
+            }
         }
 	}	
     
