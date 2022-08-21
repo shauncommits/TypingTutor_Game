@@ -24,15 +24,22 @@ public class ScoreUpdater  implements Runnable {
         maxWords=max;
     }
 	
-	public void run() {
-        while (true) {    	
-                caught.setText("Caught: " + score.getCaught() + "    ");
-                missed.setText("Missed:" +  score.getMissed()+ "    " );
+	public synchronized void run() {
+        while (true) {  
+				synchronized(this){  	
+                caught.setText("Caught: " + score.getCaught() + "    ");}
+				synchronized(this){
+                missed.setText("Missed:" +  score.getMissed()+ "    " );}
+				synchronized(this){
                 scoreView.setText("Score:" + score.getScore()+ "    " );  //setText is thread safe (I think)
+				}
 				if ((score.getMissed())>=3) {
-		               caught.setText("Caught: " + score.getCaught() + "    ");
-		               missed.setText("Missed:" +  score.getMissed()+ "    " );
-		               scoreView.setText("Score:" + score.getScore()+ "    " );  //setText is thread safe (I think)
+					synchronized(this){  	
+					   caught.setText("Caught: " + score.getCaught() + "    ");}
+					   synchronized(this){
+					   missed.setText("Missed:" +  score.getMissed()+ "    " );}
+					   synchronized(this){
+					   scoreView.setText("Score:" + score.getScore()+ "    " );} //setText is thread safe (I think)
 					   done.set(true); //game ends when missed 3
 					   won.set(false);
 				} else if (score.getCaught()>=maxWords) {

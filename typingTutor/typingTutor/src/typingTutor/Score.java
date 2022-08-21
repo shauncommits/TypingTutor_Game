@@ -1,45 +1,47 @@
 package typingTutor;
 
+import java.util.concurrent.atomic.AtomicInteger;
+
 public class Score {
-	private int missedWords;
-	private int caughtWords;
-	private int gameScore;
+	private AtomicInteger missedWords;
+	private AtomicInteger caughtWords;
+	private AtomicInteger gameScore;
 	
 	Score() {
-		missedWords=0;
-		caughtWords=0;
-		gameScore=0;
+		missedWords= new AtomicInteger(0);
+		caughtWords=new AtomicInteger(0);
+		gameScore=new AtomicInteger(0);
 	}
 		
 	// all getters and setters must be synchronized
 	
 	synchronized public int getMissed() {
-		return missedWords;
+		return missedWords.get();
 	}
 
 	synchronized public int getCaught() {
-		return caughtWords;
+		return caughtWords.get();
 	}
 	
 	synchronized public int getTotal() {
-		return (missedWords+caughtWords);
+		return (missedWords.get()+caughtWords.get());
 	}
 
 	synchronized public int getScore() {
-		return gameScore;
+		return gameScore.get();
 	}
 	
 	synchronized public void missedWord() {
-		missedWords++;
+		missedWords.getAndIncrement();
 	}
 	synchronized public void caughtWord(int length) {
-		caughtWords++;
-		gameScore+=length;
+		caughtWords.getAndIncrement();
+		gameScore.set(gameScore.get()+length);
 	}
 
 	synchronized public void reset() {
-		caughtWords=0;
-		missedWords=0;
-		gameScore=0;
+		caughtWords= new AtomicInteger(0);
+		missedWords= new AtomicInteger(0);
+		gameScore= new AtomicInteger(0);
 	}
 }

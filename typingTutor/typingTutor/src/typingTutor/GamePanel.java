@@ -3,7 +3,9 @@ package typingTutor;
 import java.awt.Color;
 import java.awt.Graphics;
 import java.awt.Font;
-import java.util.concurrent.CountDownLatch;
+import javax.swing.JLabel;
+
+//import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import javax.swing.JPanel;
@@ -12,6 +14,10 @@ public class GamePanel extends JPanel implements Runnable {
 		private AtomicBoolean done ; //REMOVE
 		private AtomicBoolean started ; //REMOVE
 		private AtomicBoolean won ; //REMOVE
+
+		// public static final String colReset = "\u001B[0m";
+		// public static final String col = "\u001B[32m";
+		JLabel greenWord = new JLabel("Hungry Word");
 
 		private FallingWord[] words;
 		private int noWords;
@@ -26,12 +32,12 @@ public class GamePanel extends JPanel implements Runnable {
 			won=w; //REMOVE
 		}
 		
-		public void paintComponent(Graphics g) {
-		    int width = getWidth()-borderWidth*2;
+		public synchronized void paintComponent(Graphics g) {
+		    int width = getWidth(); // fix the width of the drawing board
 		    int height = getHeight()-borderWidth*2;
-		    g.clearRect(borderWidth,borderWidth,width,height);//the active space
+		    g.clearRect(0,0,width+50,height);//the active space
 		    g.setColor(Color.pink); //change colour of pen
-		    g.fillRect(borderWidth,height,width,borderWidth); //draw danger zone
+		    g.fillRect(borderWidth,height,width-50,borderWidth); //draw danger zone
 
 		    g.setColor(Color.black);
 		    g.setFont(new Font("Arial", Font.PLAIN, 26));
@@ -42,11 +48,21 @@ public class GamePanel extends JPanel implements Runnable {
 		    	
 		    }
 		    else if (!done.get()) {
-		    	for (int i=0;i<noWords;i++){	    	
-		    		g.drawString(words[i].getWord(),words[i].getX()+borderWidth,words[i].getY());	
+		    	for (int i=0;i<noWords;i++){
+					
+					if(words[i].getWord().equals("Hungry Word")){
+						synchronized(this){
+						g.setColor(Color.GREEN);
+						g.drawString(greenWord.getText(),words[i].getX()+borderWidth,words[i].getY());}
+						g.setColor(Color.black);
+					}
+					else
+						g.drawString(words[i].getWord(),words[i].getX()+borderWidth,words[i].getY());
+
+		    			
 		    	}
 		    	g.setColor(Color.lightGray); //change colour of pen
-		    	g.fillRect(borderWidth,0,width,borderWidth);
+		    	g.fillRect(borderWidth,0,width-50,borderWidth);
 		   }
 		   else { if (won.get()) {
 			   g.setFont(new Font("Arial", Font.BOLD, 36));
@@ -58,9 +74,10 @@ public class GamePanel extends JPanel implements Runnable {
 		   }
 		}
 		
-		public int getValidXpos() {
-			int width = getWidth()-borderWidth*4;
+		public synchronized int getValidXpos() {
+			int width = getWidth()-borderWidth*6;
 			int x= (int)(Math.random() * width);
+
 			return x;
 		}
 		

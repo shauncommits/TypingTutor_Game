@@ -32,6 +32,7 @@ public class CatchWord extends Thread {
 	
 	public void run() {
 		int i=0;
+		
 		while (i<noWords) {		
 			while(pause.get()) {};
 			if (words[i].matchWord(target)) {

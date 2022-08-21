@@ -7,8 +7,6 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.FileInputStream;
 import java.io.IOException;
-
-
 import java.util.Scanner;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -27,26 +25,33 @@ public class TypingTutorApp {
 
 	static FallingWord[] words;
 	static WordMover[] wrdShft;
+	static DuplicateRemover obj;
+	static HungryWordMover hungry;
 	static CountDownLatch startLatch; //so threads can start at once
 	
 	static AtomicBoolean started;  
 	static AtomicBoolean pause;  
 	static AtomicBoolean done;  
 	static AtomicBoolean won; 
+
+	//static ArrayList<String> wordList = new ArrayList<>();
 	
 	static Score score = new Score();
 	static GamePanel gameWindow;
 	static ScoreUpdater scoreD ;
+	
 	static Thread gameWindowThread;
 	static Thread scoreThread;
 	
 	public static void setupGUI(int frameX,int frameY,int yLimit) {
 		// Frame init and dimensions
     	JFrame frame = new JFrame("Typing Tutor"); 
+		synchronized(frame){
     	frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
     	frame.setSize(frameX, frameY);
     	
       	JPanel g = new JPanel();
+		
         g.setLayout(new BoxLayout(g, BoxLayout.PAGE_AXIS)); 
       	g.setSize(frameX,frameY);
  
@@ -56,7 +61,7 @@ public class TypingTutorApp {
 	    
 	    JPanel txt = new JPanel();
 	    txt.setLayout(new BoxLayout(txt, BoxLayout.LINE_AXIS)); 
-	    JLabel caught =new JLabel("Caught: " + score.getCaught() + "    ");
+	    JLabel caught =new JLabel("Caught: " + score.getCaught() + "    "); 
 	    caught.setForeground(Color.blue);
 	    JLabel missed =new JLabel("Missed:" + score.getMissed()+ "    ");
 	    missed.setForeground(Color.red);
@@ -67,7 +72,8 @@ public class TypingTutorApp {
 	    txt.add(scr);
     
 	    scoreD = new ScoreUpdater(caught, missed,scr,score,done,won,totalWords);      //thread to update score
-       
+        
+
 	   final JTextField textEntry = new JTextField("",20);
 	   textEntry.addActionListener(new ActionListener() {
 	      public void actionPerformed(ActionEvent evt) { 
@@ -94,8 +100,11 @@ public class TypingTutorApp {
         //The Start Button
 	   	JButton startB = new JButton("Start");;
 	    // add the listener to the jbutton to handle the "pressed" event
+		synchronized(startB){
 		startB.addActionListener(new ActionListener() {
-		    public void actionPerformed(ActionEvent e) {
+		    public synchronized void actionPerformed(ActionEvent e) {
+				
+				
 		    	won.set(false);
 		    	done.set(false);
 		    	started.set(true);
@@ -108,24 +117,27 @@ public class TypingTutorApp {
 					startLatch = new CountDownLatch(1); //so threads can start at once
 					createWordMoverThreads();   	 //create new threads for next game 
 			    	startLatch.countDown(); //set wordMovers going - must have barrier[]
-		    	}
+				
+				}
 		    	textEntry.requestFocus();
 		      }
-		});//finish addActionListener
+		});}//finish addActionListener
 			
 	   //the Pause Button
 		JButton pauseB = new JButton("Pause");;
 		// add the listener to the jbutton to handle the "pressed" event
+		synchronized(pauseB){
 		pauseB.addActionListener(new ActionListener(){
 				   public void actionPerformed(ActionEvent e){
 					   	pause.set(true);  // signal pause
 					   	done.set(false); //double check for safety
 				      }
-	    }); //finish addActionListener
+	    });} //finish addActionListener
 		
 		//the QuitGameButton
 	     JButton quitB = new JButton("Quit Game");;
 	    // add the listener to the jbutton to handle the "pressed" event
+		synchronized(quitB){
 		quitB.addActionListener(new ActionListener() {
 				  public void actionPerformed(ActionEvent e) {
 					  done.set(true);  // signal stop
@@ -137,23 +149,23 @@ public class TypingTutorApp {
 					     			if (wrdShft[i].isAlive())	{
 									wrdShft[i].join();}
 								} catch (InterruptedException e1) {
-									// TODO Auto-generated catch block
 									e1.printStackTrace();
 								}
 					    }
 				}
-		});  //finish addActionListener
+		});}  //finish addActionListener
 					
 		//the Exit Button
 		JButton endB = new JButton("Exit");;
 				// add the listener to the jbutton to handle the "pressed" event
+				synchronized(endB){
 				endB.addActionListener(new ActionListener()
 			    {
 			      public void actionPerformed(ActionEvent e)
 			      {
 			    	  System.exit(0);
 			      }
-			    });
+			    });}
 	    
        //add all the buttons
 		b.add(startB);
@@ -167,10 +179,10 @@ public class TypingTutorApp {
         frame.setContentPane(g);     
        	//frame.pack();  // don't do this - packs it into small space
         frame.setVisible(true);
-	}
+	}}
 	
 	
-	public static void createThreads() {
+	public static synchronized void createThreads() {
 		score.reset();
         //main Display Thread 
       	gameWindowThread = new Thread(gameWindow);  //updating panel
@@ -179,14 +191,20 @@ public class TypingTutorApp {
        	scoreThread.start();
     	gameWindowThread.start();
     	createWordMoverThreads();
+		obj = new DuplicateRemover(words,wrdShft,score);
+		hungry = new HungryWordMover(words, wrdShft);
+		// hungry = new HungryWordMover(words, wrdShft, score);
+		hungry.start();
+		obj.start();
 	}
 	
 	
-	public static void createWordMoverThreads() {
+	public static synchronized void createWordMoverThreads() {
 		score.reset();
 	  	//initialize shared array of current words with the words for this game
 		for (int i=0;i<noWords;i++) {
 			words[i]=new FallingWord(dict.getNewWord(),gameWindow.getValidXpos(),yLimit);
+			//wordList.add(words[i].getWord());
 		}
 		//create threads to move them
 	    for (int i=0;i<noWords;i++) {
@@ -196,9 +214,11 @@ public class TypingTutorApp {
      	for (int i=0;i<noWords;i++) {
      		wrdShft[i] .start();
      	}
+
 	}
+
 	
-public static String[] getDictFromFile(String filename) {
+public static synchronized String[] getDictFromFile(String filename) {
 	//read in the list of words.
 		String [] dictStr = null;
 		try {
@@ -248,6 +268,9 @@ public static void main(String[] args) {
 		CatchWord.setWords(words);  //class setter - static method
 		CatchWord.setScore(score);  //class setter - static method
 		CatchWord.setFlags(done,pause); //class setter - static method
+		
+		//HungryWordMover.setFlags(done, pause);
+		//HungryWordMover.setScore(score);
 
 		setupGUI(frameX, frameY, yLimit);  
 	
