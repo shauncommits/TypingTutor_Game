@@ -1,8 +1,13 @@
 package typingTutor;
 
 import java.util.concurrent.atomic.AtomicBoolean;
-
 import javax.swing.JLabel;
+
+/**
+ * @author Shaun 
+ * Date created 17/08/22
+ * @version 1
+ */
 
 public class ScoreUpdater  implements Runnable {
 	private Score score;
@@ -13,6 +18,16 @@ public class ScoreUpdater  implements Runnable {
 	private AtomicBoolean won;
 	private int maxWords;
 
+	/**
+	 * ScoreUpdate constructor
+	 * @param c the JLable of the number of words caught for updating the GUI
+	 * @param m the JLable of the number of words missed for updating the GUI
+	 * @param s the JLable of the number of the score accumulated to update the score on the GUI
+	 * @param score the Score object
+	 * @param d done signal 
+	 * @param w won game signal
+	 * @param max maximum number of words 
+	 */
 	ScoreUpdater(JLabel c, JLabel m, JLabel s, Score score, 
 			AtomicBoolean d, AtomicBoolean w, int max) {
         this.caught=c;
@@ -24,30 +39,34 @@ public class ScoreUpdater  implements Runnable {
         maxWords=max;
     }
 	
+
 	public synchronized void run() {
         while (true) {  
-				synchronized(this){  	
+				synchronized(caught){ // display the number of caught words
                 caught.setText("Caught: " + score.getCaught() + "    ");}
-				synchronized(this){
+				synchronized(missed){ // display the number of missed words
                 missed.setText("Missed:" +  score.getMissed()+ "    " );}
-				synchronized(this){
+				synchronized(scoreView){ // display the score update on the GUI
                 scoreView.setText("Score:" + score.getScore()+ "    " );  //setText is thread safe (I think)
 				}
 				if ((score.getMissed())>=3) {
-					synchronized(this){  	
+					synchronized(caught){  	
 					   caught.setText("Caught: " + score.getCaught() + "    ");}
-					   synchronized(this){
+					   synchronized(missed){
 					   missed.setText("Missed:" +  score.getMissed()+ "    " );}
-					   synchronized(this){
+					   synchronized(scoreView){
 					   scoreView.setText("Score:" + score.getScore()+ "    " );} //setText is thread safe (I think)
 					   done.set(true); //game ends when missed 3
 					   won.set(false);
 				} else if (score.getCaught()>=maxWords) {
 					   done.set(true); //game ends when missed 3
 					   won.set(true);
-		               caught.setText("Caught: " + score.getCaught() + "    ");
-		               missed.setText("Missed:" +  score.getMissed()+ "    " );
-		               scoreView.setText("Score:" + score.getScore()+ "    " );  
+					   synchronized(caught){
+		               caught.setText("Caught: " + score.getCaught() + "    ");}
+					   synchronized(missed){
+		               missed.setText("Missed:" +  score.getMissed()+ "    " );}
+					   synchronized(scoreView){
+		               scoreView.setText("Score:" + score.getScore()+ "    " );}
 				}
 
         }

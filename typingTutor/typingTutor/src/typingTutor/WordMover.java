@@ -3,6 +3,11 @@ package typingTutor;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+/**
+ * @author Shaun 
+ * Date created 17/08/22
+ * @version 1
+ */
 
 public class WordMover extends Thread {
 	private FallingWord myWord;
@@ -11,10 +16,24 @@ public class WordMover extends Thread {
 	private Score score;
 	CountDownLatch startLatch; //so all can start at once
 	
+	/**
+	 * WordMover constructor
+	 * @param word is the FallingWord object passed by reference
+	 */
 	WordMover( FallingWord word) {
 		myWord = word;
 	}
 	
+	/**
+	 * WordMover constructor 
+	 * 
+	 * @param word is the FallingWord 
+	 * @param dict the dictionary with the words
+	 * @param score passed by value Score
+	 * @param startLatch the latch to start when count down method is called with specific threshold value
+	 * @param d signal when the game has ended
+	 * @param p signal when the game is paused
+	 */
 	WordMover( FallingWord word,WordDictionary dict, Score score,
 			CountDownLatch startLatch, AtomicBoolean d, AtomicBoolean p) {
 		this(word);
@@ -40,6 +59,8 @@ public class WordMover extends Thread {
 		while (!done.get()) {				
 			//animate the word
 			while (!myWord.dropped() && !done.get()) {
+					// Code below to move the word until it is half way the screen and when it is to mive the word on horizontally
+					// to the right
 				    if(myWord.getWord().equals("Hungry Word")){
 						if(myWord.getY()>half)
 							myWord.left(10);

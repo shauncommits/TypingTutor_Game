@@ -1,7 +1,6 @@
 package typingTutor;
 
 import javax.swing.*;
-
 import java.awt.Color;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -10,13 +9,19 @@ import java.io.IOException;
 import java.util.Scanner;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
+
+/**
+ * @author Shaun 
+ * Date created 17/08/22
+ * @version 1
+ */
+
 //model is separate from the view.
 
 public class TypingTutorApp {
 //shared class variables
 	static int noWords=4;
 	static int totalWords;
-
    	static int frameX=1000;
 	static int frameY=600;
 	static int yLimit=480;
@@ -33,8 +38,6 @@ public class TypingTutorApp {
 	static AtomicBoolean pause;  
 	static AtomicBoolean done;  
 	static AtomicBoolean won; 
-
-	//static ArrayList<String> wordList = new ArrayList<>();
 	
 	static Score score = new Score();
 	static GamePanel gameWindow;
@@ -43,22 +46,29 @@ public class TypingTutorApp {
 	static Thread gameWindowThread;
 	static Thread scoreThread;
 	
+	/**
+	 * setupGUI method 
+	 * @param frameX the width of the frame
+	 * @param frameY the height of the frame
+	 * @param yLimit the y limit on the frame
+	 */
 	public static void setupGUI(int frameX,int frameY,int yLimit) {
 		// Frame init and dimensions
     	JFrame frame = new JFrame("Typing Tutor"); 
-		synchronized(frame){
+		synchronized(frame){ // synchronizes the frame object
     	frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
     	frame.setSize(frameX, frameY);
     	
-      	JPanel g = new JPanel();
-		
+      	JPanel g = new JPanel(); 
         g.setLayout(new BoxLayout(g, BoxLayout.PAGE_AXIS)); 
       	g.setSize(frameX,frameY);
- 
-		gameWindow = new GamePanel(words,yLimit,done,started,won);
+		
+		// set the game panel
+		gameWindow = new GamePanel(words,yLimit,done,started,won); 
 		gameWindow.setSize(frameX,yLimit+100);
 	    g.add(gameWindow);
 	    
+		// set the panel that display the game results
 	    JPanel txt = new JPanel();
 	    txt.setLayout(new BoxLayout(txt, BoxLayout.LINE_AXIS)); 
 	    JLabel caught =new JLabel("Caught: " + score.getCaught() + "    "); 
@@ -67,13 +77,14 @@ public class TypingTutorApp {
 	    missed.setForeground(Color.red);
 	    JLabel scr =new JLabel("Score:" + score.getScore()+ "    ");   
 	    
+		// put the labels in the text panel
 	    txt.add(caught);
 	    txt.add(missed);
 	    txt.add(scr);
     
 	    scoreD = new ScoreUpdater(caught, missed,scr,score,done,won,totalWords);      //thread to update score
         
-
+		// the textField area to reach the word typed by the user
 	   final JTextField textEntry = new JTextField("",20);
 	   textEntry.addActionListener(new ActionListener() {
 	      public void actionPerformed(ActionEvent evt) { 
@@ -89,6 +100,7 @@ public class TypingTutorApp {
 	      }
 	    });
 	   
+	   // add the text entry to the text panel
 	   txt.add(textEntry);
 	   txt.setMaximumSize( txt.getPreferredSize() );
 	   g.add(txt);
@@ -181,7 +193,9 @@ public class TypingTutorApp {
         frame.setVisible(true);
 	}}
 	
-	
+	/**
+	 * createThreads method to create and start the Threads
+	 */
 	public static synchronized void createThreads() {
 		score.reset();
         //main Display Thread 
@@ -189,16 +203,19 @@ public class TypingTutorApp {
         //scoreThread - for updating score
       	scoreThread = new Thread(scoreD);  
        	scoreThread.start();
+		
     	gameWindowThread.start();
     	createWordMoverThreads();
 		obj = new DuplicateRemover(words,wrdShft,score);
-		hungry = new HungryWordMover(words, wrdShft);
-		// hungry = new HungryWordMover(words, wrdShft, score);
-		hungry.start();
 		obj.start();
+		hungry = new HungryWordMover(words, wrdShft,score);
+		hungry.start();
+		
 	}
 	
-	
+	/**
+	 * createWordMoverThreads creates the WordMoverThreads
+	 */
 	public static synchronized void createWordMoverThreads() {
 		score.reset();
 	  	//initialize shared array of current words with the words for this game
@@ -217,7 +234,11 @@ public class TypingTutorApp {
 
 	}
 
-	
+/**
+ * getDictFromFile
+ * @param filename the file name containing the dictionay
+ * @return the dictionary of the file
+ */
 public static synchronized String[] getDictFromFile(String filename) {
 	//read in the list of words.
 		String [] dictStr = null;
@@ -235,7 +256,10 @@ public static synchronized String[] getDictFromFile(String filename) {
 	    }
 		return dictStr;
 	}
-
+/**
+ * Main method to run the programs 
+ * @param args take any number of arguments
+ */
 public static void main(String[] args) {
 		started=new AtomicBoolean(false);
 		done = new AtomicBoolean(false);
