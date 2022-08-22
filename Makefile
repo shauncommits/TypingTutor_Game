@@ -15,7 +15,7 @@ clean:
 	rm -f $(BINDIR)/typingTutor/*.class
 
 run-Game: $(CLASS_FILES)
-	@java -cp typingTutor/typingTutor/bin typingTutor.TypingTutorApp
+	@java -cp typingTutor/typingTutor/bin typingTutor.TypingTutorApp $(ARGS)
 
 javaDoc:
-	javadoc -d doc src/*.java
+	javadoc -d doc typingTutor/typingTutor/src/typingTutor/*.java
