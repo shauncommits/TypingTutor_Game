@@ -1,6 +1,9 @@
 package typingTutor;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.awt.font.FontRenderContext;
+import java.awt.geom.AffineTransform;
+import java.awt.*;
 
 /**
  * FallingWord blueprint for the falling words, has all the methods and attribute to find, modify and signal
@@ -223,5 +226,15 @@ public class FallingWord {
 		return dropped.get();
 	}
 
+	/**
+	 * wordPixelLenght method
+	 * @return half the word pixel length
+	 */
+	public synchronized int wordPixelLenght(){
+		Font font = new Font("Arial", Font.PLAIN, 12); // use the same font used in the GUI
+		FontRenderContext frc = new FontRenderContext(new AffineTransform(), true, true);
+		
+		return (int)(font.getStringBounds(word, frc).getWidth())/2;
+	}
 
 }
