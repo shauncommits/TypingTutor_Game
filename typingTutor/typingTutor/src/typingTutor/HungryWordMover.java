@@ -49,10 +49,13 @@ public class HungryWordMover extends Thread {
                         continue;
                             if(fall[i].getWord().equals("Hungry Word")){ // code to be implement when the Hungry Word is on the screen
 
-                                if(fall[i].getY()>50){
-                                    heightDiff = Math.abs(fall[i].getY()-fall[j].getY());
-                                    thresholdSpeed = Math.abs(fall[i].getSpeed()-fall[j].getSpeed());
-                                    if(fall[i].getY()<halfMaxHeight){
+                                if(fall[i].getY()>50){ // ensure the Hungry Word gets to eat other words when it appears on the active panel
+
+                                    heightDiff = Math.abs(fall[i].getY()-fall[j].getY()); // get the words height difference 
+                                    thresholdSpeed = Math.abs(fall[i].getSpeed()-fall[j].getSpeed()); // get the difference in the words falling speed
+                                    
+                                    if(fall[i].getY()<halfMaxHeight){ // use this condition to deal with two cases, when the word is falling vertically and horinzontally
+                                    // cater for all the words falling speed so the word can dissapear when bumped based on relative speed
                                     if(thresholdSpeed<200)
                                         threshold = 15;
                                     else if(thresholdSpeed>199&&thresholdSpeed<400)
@@ -64,28 +67,28 @@ public class HungryWordMover extends Thread {
                                     else
                                         threshold = 55;
                                     } 
-                                    else{
+                                    else{ // this is the case when the word is moving horizontally, the relative speed becomes higher. Hence the threshold increases to deem a bump has happened
                                         if(fall[j].getSpeed()<200)
                                         threshold = 66;
                                     else if(fall[j].getSpeed()>199&&fall[j].getSpeed()<400)
-                                        threshold = 56;
+                                        threshold = 54;
                                     else if(fall[j].getSpeed()>399&&fall[j].getSpeed()<600)
-                                        threshold = 46;
+                                        threshold = 44;
                                         else if(fall[j].getSpeed()>599&&fall[j].getSpeed()<900)
-                                        threshold = 36;
+                                        threshold = 34;
                                     else
-                                        threshold = 26;
+                                        threshold = 24;
                                     } 
                                       
-                                    if(heightDiff<threshold){  // if(fall[i].getSpeed())
-                                        lengthSum = fall[i].wordPixelLenght()+fall[j].wordPixelLenght();
-                                        pixelPosition = Math.abs(fall[i].getX()-fall[j].getX());
-                                        if(pixelPosition<lengthSum){
+                                    if(heightDiff<threshold){  // execute this code when the threshold has been met
+                                        lengthSum = fall[i].wordPixelLenght()+fall[j].wordPixelLenght(); //sum of the word's pixel length from the center
+                                        pixelPosition = Math.abs(fall[i].getX()-fall[j].getX()); // difference in their x position
+                                        if(pixelPosition<lengthSum){ // only when this final condition has been met we consider that there has been a bump. When the sum of the words length from center
+                                                                     // is more than the pixel's x position relativity
                                             fall[j].resetWord();
                                             score.missedWord();
-                                            System.out.println("Diff "+pixelPosition+" both "+lengthSum);
-                                            pixelPosition = 10000;
-                                            lengthSum = 10000;
+                                            pixelPosition = 10000; //reset the pixels positions to arbitary large numbers out of the game panel lenght
+                                            lengthSum = 10000; //reset the word's sum lengths to arbitary large numbers out of the game panel lenght
                                         }
                                     }
                                 }
