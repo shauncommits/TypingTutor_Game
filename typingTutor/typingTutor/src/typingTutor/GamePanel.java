@@ -108,7 +108,7 @@ public class GamePanel extends JPanel implements Runnable {
 		 * @return the valid x posotion for the word to fit inside the drawind pane
 		 */
 		public synchronized int getValidXpos() {
-			int width = getWidth()-borderWidth*8;
+			int width = getWidth()-borderWidth*10;
 			int x= (int)(Math.random() * width);
 
 			return x;
