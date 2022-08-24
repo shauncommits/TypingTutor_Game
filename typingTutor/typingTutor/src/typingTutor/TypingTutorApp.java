@@ -11,6 +11,8 @@ import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
+ * TypingTutorApp class to run all the threads and also the setUp the GUI environment for the game
+ * 
  * @author Shaun 
  * Date created 17/08/22
  * @version 1
@@ -25,6 +27,7 @@ public class TypingTutorApp {
    	static int frameX=1000;
 	static int frameY=600;
 	static int yLimit=480;
+	static int validPosition;
 
 	static WordDictionary dict = new WordDictionary(); //use default dictionary, to read from file eventually
 
@@ -32,6 +35,7 @@ public class TypingTutorApp {
 	static WordMover[] wrdShft;
 	static DuplicateRemover obj;
 	static HungryWordMover hungry;
+	static BackgroundSound audio;
 	static CountDownLatch startLatch; //so threads can start at once
 	
 	static AtomicBoolean started;  
@@ -206,10 +210,18 @@ public class TypingTutorApp {
 		
     	gameWindowThread.start();
     	createWordMoverThreads();
+
+		// Instantiate and start the DuplicateRemover Thread
 		obj = new DuplicateRemover(words,wrdShft,score);
 		obj.start();
+
+		// Instantiate and start the HungryWordMover Tread
 		hungry = new HungryWordMover(words, wrdShft,score);
 		hungry.start();
+
+		// Instantiate and start the BackgroundSound Thread
+		audio = new BackgroundSound("typingTutor/typingTutor/src/typingTutor/both-of-us-14037.wav");
+		audio.start();
 		
 	}
 	
@@ -220,8 +232,10 @@ public class TypingTutorApp {
 		score.reset();
 	  	//initialize shared array of current words with the words for this game
 		for (int i=0;i<noWords;i++) {
-			words[i]=new FallingWord(dict.getNewWord(),gameWindow.getValidXpos(),yLimit);
-			//wordList.add(words[i].getWord());
+			validPosition = gameWindow.getValidXpos();
+			if(validPosition>800) // ensure the words they do not appear off the screen
+				validPosition = 800;
+			words[i]=new FallingWord(dict.getNewWord(),validPosition,yLimit);
 		}
 		//create threads to move them
 	    for (int i=0;i<noWords;i++) {
