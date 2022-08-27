@@ -13,6 +13,7 @@ public class DuplicateRemover extends Thread{
     static int size = TypingTutorApp.noWords; // the number of words specified in TypingTutor by the user he wants to fall when playing the game
     static FallingWord[] fall = new FallingWord[size]; // Array of the FalligWord 
 	static WordMover[] wordsM = new WordMover[size]; // Array of the WordMover Thread
+    static FallingWord hungWord = new FallingWord();
     Score sco; // Score declaration
     
 	/**
@@ -20,11 +21,13 @@ public class DuplicateRemover extends Thread{
      * @param f array of the FallingWord
      * @param w array of the WordMover
      * @param score Score reference
+     * @param d the FallingWord object for the Hungry Word
      */
-    public DuplicateRemover(FallingWord[] f, WordMover[] w,Score score){
+    public DuplicateRemover(FallingWord[] f,FallingWord d, WordMover[] w,Score score){
         fall = f;
         wordsM = w;
         sco = score;
+        hungWord = d;
     }
 
     /**
@@ -36,8 +39,9 @@ public class DuplicateRemover extends Thread{
             for (int j = 0; j < size; j++) {
                 if(i==j)
                     continue;
-                    if(fall[i].getY()>50&fall[j].getY()>50)// remove the duplicates when the word appear on the screen
+                    if(fall[i].getY()>50&fall[j].getY()>50){// remove the duplicates when the word appear on the screen
                         if(fall[i].sameWord((fall[j]))); // method to remove the duplicate words
+                        if(fall[i].sameWord(hungWord));}
             }	 
            }   
 		}

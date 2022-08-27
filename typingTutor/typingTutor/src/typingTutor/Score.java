@@ -57,7 +57,7 @@ public class Score {
 	/**
 	 * missedWord method, increments the number of missed words by the player
 	 */
-	public synchronized void missedWord() {
+	public void missedWord() {
 		missedWords.getAndIncrement();
 	}
 	

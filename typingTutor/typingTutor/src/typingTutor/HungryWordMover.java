@@ -1,5 +1,9 @@
-
 package typingTutor;
+
+import java.util.Random;
+import java.util.concurrent.*;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * HungryWordMover removes the words that are bumped by the Hungry Word
@@ -8,99 +12,137 @@ package typingTutor;
  * Date created 21/08/22
  * @version 1
  */
-    
-
 public class HungryWordMover extends Thread {
-    /**
-     * Center of attention word is the Hungry Word
-     */
-    public String target = "Hungry Word"; // use this not simplify the calling of the word's height 
-    static int lengthSum; // the combination of the words lengths from their centers
-    static int pixelPosition; // the difference in the words pixel positions
-    static int heightDiff; // pixel height difference
-    static int size = TypingTutorApp.noWords; // get the size of the array of the words falling words to be used
-    static FallingWord[] fall = new FallingWord[size]; // FallingWord array
-	static WordMover[] wordsM = new WordMover[size]; // WordMover array
-    static Score score; // The Score object
-    static int thresholdSpeed = 0; // the difference in speed of the words
-    static int threshold;
-     static int halfMaxHeight; // the GUI half size height
 
+	private FallingWord myWord; // The falling hungry word
+    private FallingWord[] wordList; // FallingWord array
+	private AtomicBoolean done; // signal when the game is over
+
+    static AtomicInteger lengthSum = new AtomicInteger(0); // the combination of the words lengths from their centers
+    static AtomicInteger heightDiff = new AtomicInteger(0); // the difference of the words y co-ordinates
+    static AtomicInteger lenghtDiff = new AtomicInteger(0); // the difference of the words x co-ordinates
+    static AtomicInteger speedDiff = new AtomicInteger(1001); // the difference of the two words speed
+    static AtomicInteger threshold = new AtomicInteger(25); // the threshold used as a guide if words intersect based on their speed
+
+    static int size = TypingTutorApp.noWords; // get the size of the array of the words falling words to be used
+	private AtomicBoolean pause; //singal to the program when the game is paused
+	private Score score; // The Score class 
+	CountDownLatch startLatch; //so all can start at once
+    private Random rand = new Random(); // generate a random number so the hungry word may appear in the game randomly
+    /**
+     * the variable that store the random number from the random generator class
+     */
+    public int random; 
+    WordDictionary dictionary; // dictionary of the word used
+
+    //static AtomicInteger thresholdSpeed = new AtomicInteger(0); // the difference in speed of the words
+     static AtomicInteger halfMaxHeight; // the GUI half size height
+	
+     /**
+      * HungryWordMOver with one paramter
+      * @param word is the falling word
+      */
+	HungryWordMover( FallingWord word) {
+		myWord = word;
+	}
+	
     /**
      * The HungryWordMover constructor
      * @param f the FallingWord array passed by reference
      * @param w the WordMore array passed by reference
      * @param sco the score object passed by reference
      */
-    public HungryWordMover(FallingWord[] f, WordMover[] w,Score sco){
-        fall = f;
-        wordsM = w;
-        score = sco;
-        halfMaxHeight = fall[0].getMaxHeight()/2; // get half of the GUI height
-    }
-
-
+	HungryWordMover(FallingWord[] wordList, FallingWord word,WordDictionary dict, Score score,
+			CountDownLatch startLatch, AtomicBoolean d, AtomicBoolean p) {
+		this(word);
+		this.startLatch = startLatch;
+		this.score=score;
+		this.done=d;
+		this.pause=p;
+        dictionary = dict;
+        this.wordList = wordList;
+	}
 	
-	public synchronized void run() {
-		while(true){ // Execution that is executed while the Main Thread has not ended
-            for (int i = 0; i < size; i++) { // loops through the FallingWord created Threads
-                for (int j = 0; j < size; j++) {
-                    if(i==j)
-                        continue;
-                            if(fall[i].getWord().equals("Hungry Word")){ // code to be implement when the Hungry Word is on the screen
 
-                                if(fall[i].getY()>50){ // ensure the Hungry Word gets to eat other words when it appears on the active panel
-
-                                    heightDiff = Math.abs(fall[i].getY()-fall[j].getY()); // get the words height difference 
-                                    thresholdSpeed = Math.abs(fall[i].getSpeed()-fall[j].getSpeed()); // get the difference in the words falling speed
-                                    
-                                    if(fall[i].getY()<halfMaxHeight){ // use this condition to deal with two cases, when the word is falling vertically and horinzontally
-                                    // cater for all the words falling speed so the word can dissapear when bumped based on relative speed
-                                    if(thresholdSpeed<200)
-                                        threshold = 15;
-                                    else if(thresholdSpeed>199&&thresholdSpeed<400)
-                                        threshold = 25;
-                                    else if(thresholdSpeed>399&&thresholdSpeed<600)
-                                        threshold = 35;
-                                        else if(thresholdSpeed>599&&thresholdSpeed<900)
-                                        threshold = 45;
-                                    else
-                                        threshold = 55;
-                                    } 
-                                    else{ // this is the case when the word is moving horizontally, the relative speed becomes higher. Hence the threshold increases to deem a bump has happened
-                                        if(fall[j].getSpeed()<200)
-                                        threshold = 66;
-                                    else if(fall[j].getSpeed()>199&&fall[j].getSpeed()<400)
-                                        threshold = 54;
-                                    else if(fall[j].getSpeed()>399&&fall[j].getSpeed()<600)
-                                        threshold = 44;
-                                        else if(fall[j].getSpeed()>599&&fall[j].getSpeed()<900)
-                                        threshold = 34;
-                                    else
-                                        threshold = 24;
-                                    } 
-                                      
-                                    if(heightDiff<threshold){  // execute this code when the threshold has been met
-                                        lengthSum = fall[i].wordPixelLenght()+fall[j].wordPixelLenght(); //sum of the word's pixel length from the center
-                                        pixelPosition = Math.abs(fall[i].getX()-fall[j].getX()); // difference in their x position
-                                        if(pixelPosition<lengthSum){ // only when this final condition has been met we consider that there has been a bump. When the sum of the words length from center
-                                                                     // is more than the pixel's x position relativity
-                                            fall[j].resetWord();
-                                            score.missedWord();
-                                            pixelPosition = 10000; //reset the pixels positions to arbitary large numbers out of the game panel lenght
-                                            lengthSum = 10000; //reset the word's sum lengths to arbitary large numbers out of the game panel lenght
-                                        }
-                                    }
-                                }
-
-                                if(fall[i].getX()>940){ // When the Hungry Word not scored and manages to go out screen the word is reseted and number of missed words are incremented
-                                    fall[i].resetWord();
-                                    score.missedWord();
-                                }
-                            } 
-                }	 
+	public void run() {
+		//System.out.println(myWord.getWord() + " falling speed = " + myWord.getSpeed());
+		try {
+			System.out.println(myWord.getWord() + " waiting to start " );
+			startLatch.await();
+		} catch (InterruptedException e1) {
+			// TODO Auto-generated catch block
+			e1.printStackTrace();
+		} //wait for other threads to start
+		System.out.println(myWord.getWord() + " started" );
+        int half = myWord.getMaxHeight()/2;
+        
+		while (!done.get()) {
+            random = rand.nextInt(dictionary.size*1000);	
+			//animate the word
+            try {
+                sleep(random);
+                myWord.setPos(0, half);
+            } catch (InterruptedException e) {
+                // TODO Auto-generated catch block
+                e.printStackTrace();
             }
-        }
-	}	
-    
+			while (myWord.getX()<900 && !done.get()) { //&&!myWord.droppedX()
+                
+				    myWord.moveRight(10);
+                    synchronized(this){
+                    for (int i = 0; i < size; i++) { // loops through the FallingWord created Threads
+                      
+                        for (int j = 0; j < size; j++) {
+                            if(i==j) // passes the word itself not to be compared to
+                                continue;
+
+                            lengthSum.set(myWord.wordPixelLenght()+wordList[j].wordPixelLenght()); // the sum of the words distance from their centers in the horizonatal plane
+                            lenghtDiff.set(Math.abs(myWord.getX()-wordList[j].getX())); // the absolute difference of the words y position
+                            
+                            if(lenghtDiff.get()<lengthSum.get()){ // check to see if the y co-ordinates of the words difference if is less than their words sum in length from their centers
+                                heightDiff.set(Math.abs(myWord.getY()-wordList[j].getY()));  // the absolute difference of the y co-ordinates of the words
+                                speedDiff.set(Math.abs(myWord.getSpeed()-wordList[j].getSpeed())); //the absolute differece of the words speed
+
+                                if(heightDiff.get()<100){
+                                if(speedDiff.get()<101) // when the speed is very fast there threshold to consider an intersection becomes high
+                                    threshold.set(55);
+                                else if(speedDiff.get()>100&&speedDiff.get()<301)
+                                    threshold.set(35);
+                                else                    // when the speed of the words is slow the threshold for intersection becomes smaller
+                                    threshold.set(25);
+                                
+                                if(heightDiff.get()<threshold.get()){ // guard condition for the intersection threshold
+                                    // resets all the values to default values
+                                    score.missedWord();
+                                    wordList[j].resetWord();
+                                    lenghtDiff.set(0);
+                                    lengthSum.set(0);
+                                    heightDiff.set(0);
+                                    speedDiff.set(1001);
+                                    threshold.set(12);
+                                }
+                            }
+                            }
+                               
+                        }	
+                    }}          
+
+					try {
+						sleep(myWord.getSpeed());
+					} catch (InterruptedException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					};		
+					while(pause.get()&&!done.get()) {};     
+                
+			}
+			if (myWord.getX()>899 && !done.get()) { // increments number of missed words when the green word go pass the right end
+				myWord.resetWord();
+                score.missedWord();
+			}
+			myWord.resetWord();
+            
+		}
+	}
+	
 }

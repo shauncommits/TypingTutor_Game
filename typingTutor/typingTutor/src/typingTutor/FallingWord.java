@@ -13,28 +13,31 @@ import java.awt.*;
  * Date created 17/08/22
  * @version 1
  */
-
 public class FallingWord {
 	private String word; // the word
 	private AtomicInteger x; //position - width
 	private AtomicInteger y; // postion - height
 	private AtomicInteger maxY; //maximum height
+	private AtomicInteger maxX;
+	//private AtomicBoolean droppedX; //flag to know when the word has reached the edge or has been caught
 	private AtomicBoolean dropped; //flag for if user does not manage to catch word in time
 	
-	private AtomicInteger fallingSpeed; //how fast this word is
+	private AtomicInteger fallingSpeed; //how fast this word is falling
 	private static AtomicInteger maxWait= new AtomicInteger(1000); // initialize the maximum time for waiting to 1000 to alter the speed by which the falling word falls
 	private static AtomicInteger minWait= new AtomicInteger(100); // initialize the manimmum time for waiting to 1000 to alter the speed by which the falling word falls
 	/**
-	 * dictionary of the words
+	 * The dictionary with the words
 	 */
-	public static WordDictionary dict; // the object with the words used for the game
+	public static WordDictionary dict; 
 	
 	FallingWord() { //constructor with defaults
 		word="computer"; // a default - not used
 		x= new AtomicInteger(0); // initialize the x posistion of the word to zero
 		y= new AtomicInteger(0); // initialize the y position of the word to zero
+		maxX = new AtomicInteger(900);
 		maxY=new AtomicInteger(300); // initialize the max height to signal when a word is dropped
 		dropped= new AtomicBoolean(false); // signal when a word is dropped
+		//droppedX = new AtomicBoolean(false);
 		fallingSpeed= new AtomicInteger((int)(Math.random() * (maxWait.get()-minWait.get())+minWait.get())); // initialize the falling speed
 	}
 	
@@ -44,7 +47,7 @@ public class FallingWord {
 	 */
 	FallingWord(String text) { 
 		this();
-		this.word=text;  // specify the chosen word
+		this.word=text;
 	}
 	
 	/**
@@ -63,7 +66,7 @@ public class FallingWord {
 	 * increaseSpeed method to increase the speed of the word by which it is falling
 	 */
 	public synchronized static void increaseSpeed( ) {
-		minWait.set(minWait.intValue()+50); // increment the minimum speed by 50 
+		minWait.set(minWait.get()+50); // increment the minimum speed by 50 
 		maxWait.set(maxWait.get()+50); // increment the maximu speed by 50
 	}
 	
@@ -75,17 +78,17 @@ public class FallingWord {
 		minWait.set(100);
 	}
 	
-	
 	/**
 	 * setY method to set the y position of the falling word
 	 * @param y the new position for the falling word
 	 */
 	public synchronized  void setY(int y) {
+		synchronized(this){
 		if (y>maxY.get()) {
 			y=maxY.get();
 			dropped.set(true); //user did not manage to catch this word
 		}
-		this.y.set(y);
+		this.y.set(y);}
 	}
 	
 	/**
@@ -93,7 +96,12 @@ public class FallingWord {
 	 * @param x the new word position on the x-axis
 	 */ 
 	public synchronized  void setX(int x) {
-		this.x.set(x);
+		synchronized(this){
+		if (x>maxX.get()) {
+			x=maxX.get();
+			dropped.set(true); //user did not manage to catch this word
+		}
+		this.x.set(x);}
 	}
 	
 	/**
@@ -116,7 +124,7 @@ public class FallingWord {
 	 * getX method 
 	 * @return the x position value of the word
 	 */
-	public synchronized  int getX() {
+	public synchronized int getX() {
 		return x.get();
 	}	
 	
@@ -124,23 +132,15 @@ public class FallingWord {
 	 * getY method
 	 * @return the y position of the falling word
 	 */
-	public synchronized  int getY() {
+	public synchronized int getY() {
 		return y.get();
 	}
-
-	/**
-	 * getMaxHeight method
-	 * @return the maximum height of the word to reach when falling
-	 */
-	public synchronized int getMaxHeight(){
-		return maxY.get();
-	}
-
+	
 	/**
 	 * getSpeed method
 	 * @return the speed by which the word is falling by
 	 */
-	public synchronized  int getSpeed() {
+	public synchronized int getSpeed() {
 		return fallingSpeed.get();
 	}
 
@@ -153,6 +153,7 @@ public class FallingWord {
 		setY(y);
 		setX(x);
 	}
+
 	/**
 	 * resetPos method resets the default position of the falling word
 	 */
@@ -165,18 +166,28 @@ public class FallingWord {
 	 */
 	public synchronized void resetWord() {
 		resetPos(); // call resetPos method
-		word=dict.getNewWord(); // reset word
-		dropped.set(false); // reset it that hasn't been caught 
+		word=dict.getNewWord();
+		dropped.set(false); // reset it that hasn't been caught
 		fallingSpeed.set((int)(Math.random() * (maxWait.get()-minWait.get())+minWait.get())); // word falling speed
+		//System.out.println(getWord() + " falling speed = " + getSpeed());
+	}
+
+	/**
+	 * getMaxHeight method
+	 * @return the maximum height of the word to reach when falling
+	 */
+	public synchronized int getMaxHeight(){
+		return maxY.get();
 	}
 	
 	/**
-	 * matchWord method to chech dupicate words
+	 * matchWord method to chech duplicate words
 	 * @param typedText matches this object word to a word received through the parameter
 	 * @return the true or false if typed word matches with any word on the screen panel
 	 */
 	public synchronized boolean matchWord(String typedText) {
-		if (typedText.equals(getWord())) {
+		//System.out.println("Matching against: "+text);
+		if (typedText.equals(this.word)) {
 			resetWord();
 			return true;
 		}
@@ -184,6 +195,30 @@ public class FallingWord {
 			return false;
 	}
 
+	/**
+	 * drop method
+	 * @param inc the height by which the falling word to be dropped by
+	 */
+	public synchronized  void drop(int inc) {
+		setY(y.get()+inc);
+	}
+
+	/**
+	 * moveRight method
+	 * @param inc the width by which the green word moves to the right
+	 */
+	public synchronized void moveRight(int inc){
+		setX(x.get()+inc);
+	}
+	
+	/**
+	 * dropped method
+	 * @return true of false if the word has been dropped
+	 */
+	public synchronized  boolean dropped() {
+		return dropped.get();
+	}
+	
 	/**
 	 * sameWord method to check the words if they are the same
 	 * @param fallW is a FallingWord object
@@ -201,31 +236,6 @@ public class FallingWord {
 		return false;
 	}
 
-	
-	/**
-	 * drop method
-	 * @param inc the height by which the falling word to be dropped by
-	 */
-	public synchronized  void drop(int inc) {
-		setY(y.get()+inc);
-	}
-
-	/**
-	 * left method
-	 * @param inc the widht by which the x position of the hungry word to be incremented by
-	 */
-	public synchronized  void left(int inc) {
-		setX(x.get()+inc);
-	}	
-	
-	/**
-	 * dropped method
-	 * @return true of false if the word has been dropped
-	 */
-	public synchronized  boolean dropped() {
-		return dropped.get();
-	}
-
 	/**
 	 * wordPixelLenght method
 	 * @return half the word pixel length
@@ -233,7 +243,7 @@ public class FallingWord {
 	public synchronized int wordPixelLenght(){
 		Font font = new Font("Arial", Font.PLAIN, 12); // use the same font used in the GUI
 		FontRenderContext frc = new FontRenderContext(new AffineTransform(), true, true);
-		
+
 		return (int)(font.getStringBounds(word, frc).getWidth())/2;
 	}
 

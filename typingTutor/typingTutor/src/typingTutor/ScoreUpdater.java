@@ -4,6 +4,8 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import javax.swing.JLabel;
 
 /**
+ * ScoreUpdater class to update the score of the game
+ * 
  * @author Shaun 
  * Date created 17/08/22
  * @version 1
@@ -41,13 +43,13 @@ public class ScoreUpdater  implements Runnable {
 	
 
 	public synchronized void run() {
-        while (true) {  
+        while (true) {   // Made all the setText methods thread safe
 				synchronized(caught){ // display the number of caught words
                 caught.setText("Caught: " + score.getCaught() + "    ");}
 				synchronized(missed){ // display the number of missed words
                 missed.setText("Missed:" +  score.getMissed()+ "    " );}
 				synchronized(scoreView){ // display the score update on the GUI
-                scoreView.setText("Score:" + score.getScore()+ "    " );  //setText is thread safe (I think)
+                scoreView.setText("Score:" + score.getScore()+ "    " );  
 				}
 				if ((score.getMissed())>=3) {
 					synchronized(caught){  	
@@ -55,7 +57,7 @@ public class ScoreUpdater  implements Runnable {
 					   synchronized(missed){
 					   missed.setText("Missed:" +  score.getMissed()+ "    " );}
 					   synchronized(scoreView){
-					   scoreView.setText("Score:" + score.getScore()+ "    " );} //setText is thread safe (I think)
+					   scoreView.setText("Score:" + score.getScore()+ "    " );} 
 					   done.set(true); //game ends when missed 3
 					   won.set(false);
 				} else if (score.getCaught()>=maxWords) {

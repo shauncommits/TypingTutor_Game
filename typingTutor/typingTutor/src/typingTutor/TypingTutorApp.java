@@ -19,26 +19,27 @@ import java.util.concurrent.atomic.AtomicBoolean;
  */
 
 //model is separate from the view.
-
 public class TypingTutorApp {
 //shared class variables
 	static int noWords=4;
 	static int totalWords;
+
    	static int frameX=1000;
 	static int frameY=600;
 	static int yLimit=480;
-	static int validPosition;
 
 	static WordDictionary dict = new WordDictionary(); //use default dictionary, to read from file eventually
 
 	static FallingWord[] words;
 	static WordMover[] wrdShft;
-	static DuplicateRemover obj;
-	static HungryWordMover hungry;
+	static FallingWord hungryWordDict;
 	static BackgroundSound audio;
+	static HungryWordMover hungry;
 	static CountDownLatch startLatch; //so threads can start at once
-	
-	static AtomicBoolean started;  
+	static DuplicateRemover obj;
+
+	static AtomicBoolean started;
+	static AtomicBoolean pressedStart;
 	static AtomicBoolean pause;  
 	static AtomicBoolean done;  
 	static AtomicBoolean won; 
@@ -46,10 +47,16 @@ public class TypingTutorApp {
 	static Score score = new Score();
 	static GamePanel gameWindow;
 	static ScoreUpdater scoreD ;
-	
 	static Thread gameWindowThread;
 	static Thread scoreThread;
-	
+	static int count = 0; // count the number of times the user presses the start button
+
+	//the Pause Button
+	static JButton pauseB = new JButton("Pause");
+
+	//the QuitGameButton
+	static JButton quitB = new JButton("Quit Game");;
+
 	/**
 	 * setupGUI method 
 	 * @param frameX the width of the frame
@@ -58,24 +65,25 @@ public class TypingTutorApp {
 	 */
 	public static void setupGUI(int frameX,int frameY,int yLimit) {
 		// Frame init and dimensions
-    	JFrame frame = new JFrame("Typing Tutor"); 
-		synchronized(frame){ // synchronizes the frame object
+    	JFrame frame = new JFrame("Typing Tutor");
+		synchronized(frame){
     	frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
     	frame.setSize(frameX, frameY);
+
+		
     	
-      	JPanel g = new JPanel(); 
+		// set the game panel
+      	JPanel g = new JPanel();
         g.setLayout(new BoxLayout(g, BoxLayout.PAGE_AXIS)); 
       	g.setSize(frameX,frameY);
-		
-		// set the game panel
-		gameWindow = new GamePanel(words,yLimit,done,started,won); 
+ 
+		gameWindow = new GamePanel(words,hungryWordDict,score,yLimit,done,started,won,pressedStart, quitB, pauseB);
 		gameWindow.setSize(frameX,yLimit+100);
 	    g.add(gameWindow);
 	    
-		// set the panel that display the game results
 	    JPanel txt = new JPanel();
 	    txt.setLayout(new BoxLayout(txt, BoxLayout.LINE_AXIS)); 
-	    JLabel caught =new JLabel("Caught: " + score.getCaught() + "    "); 
+	    JLabel caught =new JLabel("Caught: " + score.getCaught() + "    ");
 	    caught.setForeground(Color.blue);
 	    JLabel missed =new JLabel("Missed:" + score.getMissed()+ "    ");
 	    missed.setForeground(Color.red);
@@ -87,7 +95,7 @@ public class TypingTutorApp {
 	    txt.add(scr);
     
 	    scoreD = new ScoreUpdater(caught, missed,scr,score,done,won,totalWords);      //thread to update score
-        
+       
 		// the textField area to reach the word typed by the user
 	   final JTextField textEntry = new JTextField("",20);
 	   textEntry.addActionListener(new ActionListener() {
@@ -118,40 +126,57 @@ public class TypingTutorApp {
 	    // add the listener to the jbutton to handle the "pressed" event
 		synchronized(startB){
 		startB.addActionListener(new ActionListener() {
-		    public synchronized void actionPerformed(ActionEvent e) {
+		    public void actionPerformed(ActionEvent e) {
+				pressedStart.set(false);
 				
-				
-		    	won.set(false);
+				textEntry.setEnabled(true); //enables text to be inserted in the text entry
+		    	won.set(false); 
 		    	done.set(false);
 		    	started.set(true);
 		    	if (pause.get()) { //this is a restart from pause
 		    		pause.set(false);
-		    	} else { //user quit last game
+				}
+				else if(count>0){ // checks how many times the start button is pressed during the game, this is an error from the user though. However, it is gracefully handled
+					done.set(true); // ends the threads
+					pressedStart.set(true); // gracefully inform the user of the error
+					count = 0; // reset count
+					pauseB.setEnabled(false);
+					quitB.setEnabled(false);
+					textEntry.setEnabled(false);
+				}
+				else { //user quit last game
+					pauseB.setEnabled(true);
+					quitB.setEnabled(true);
 		    		score.reset();
 					FallingWord.resetSpeed();
 		    		done.set(false);
 					startLatch = new CountDownLatch(1); //so threads can start at once
 					createWordMoverThreads();   	 //create new threads for next game 
 			    	startLatch.countDown(); //set wordMovers going - must have barrier[]
-				
-				}
+					count++;
+		    	}
 		    	textEntry.requestFocus();
+				//done.set(true);
+				
 		      }
-		});}//finish addActionListener
+			  
+		});
+	}//finish addActionListener
 			
-	   //the Pause Button
-		JButton pauseB = new JButton("Pause");;
+	   
 		// add the listener to the jbutton to handle the "pressed" event
 		synchronized(pauseB){
 		pauseB.addActionListener(new ActionListener(){
 				   public void actionPerformed(ActionEvent e){
 					   	pause.set(true);  // signal pause
+
+						textEntry.setEnabled(false); //disables the text entry from being used when the game is paused
+
 					   	done.set(false); //double check for safety
 				      }
 	    });} //finish addActionListener
 		
-		//the QuitGameButton
-	     JButton quitB = new JButton("Quit Game");;
+		
 	    // add the listener to the jbutton to handle the "pressed" event
 		synchronized(quitB){
 		quitB.addActionListener(new ActionListener() {
@@ -159,12 +184,18 @@ public class TypingTutorApp {
 					  done.set(true);  // signal stop
 					  pause.set(false); //set for safety
 					  gameWindow.repaint();
-					 //word movers waiting on starting line
+					
+					 	pauseB.setEnabled(false);
+						textEntry.setEnabled(false);
+						count=0;
+
+						 //word movers waiting on starting line
 					   	for (int i=0;i<noWords;i++) {
 					     		try {
 					     			if (wrdShft[i].isAlive())	{
 									wrdShft[i].join();}
 								} catch (InterruptedException e1) {
+									// TODO Auto-generated catch block
 									e1.printStackTrace();
 								}
 					    }
@@ -207,22 +238,16 @@ public class TypingTutorApp {
         //scoreThread - for updating score
       	scoreThread = new Thread(scoreD);  
        	scoreThread.start();
-		
     	gameWindowThread.start();
+		
     	createWordMoverThreads();
 
-		// Instantiate and start the DuplicateRemover Thread
-		obj = new DuplicateRemover(words,wrdShft,score);
+		obj = new DuplicateRemover(words,hungryWordDict,wrdShft,score);
 		obj.start();
-
-		// Instantiate and start the HungryWordMover Tread
-		hungry = new HungryWordMover(words, wrdShft,score);
-		hungry.start();
 
 		// Instantiate and start the BackgroundSound Thread
 		audio = new BackgroundSound("typingTutor/typingTutor/src/typingTutor/both-of-us-14037.wav");
 		audio.start();
-		
 	}
 	
 	/**
@@ -232,10 +257,7 @@ public class TypingTutorApp {
 		score.reset();
 	  	//initialize shared array of current words with the words for this game
 		for (int i=0;i<noWords;i++) {
-			validPosition = gameWindow.getValidXpos();
-			if(validPosition>800) // ensure the words they do not appear off the screen
-				validPosition = 800;
-			words[i]=new FallingWord(dict.getNewWord(),validPosition,yLimit);
+			words[i]=new FallingWord(dict.getNewWord(),gameWindow.getValidXpos(),yLimit);
 		}
 		//create threads to move them
 	    for (int i=0;i<noWords;i++) {
@@ -246,8 +268,10 @@ public class TypingTutorApp {
      		wrdShft[i] .start();
      	}
 
+		 hungry = new HungryWordMover(words,hungryWordDict,dict,score,startLatch,done,pause);
+		 hungry.start();
 	}
-
+	
 /**
  * getDictFromFile
  * @param filename the file name containing the dictionay
@@ -270,6 +294,7 @@ public static synchronized String[] getDictFromFile(String filename) {
 	    }
 		return dictStr;
 	}
+
 /**
  * Main method to run the programs 
  * @param args take any number of arguments
@@ -279,6 +304,7 @@ public static void main(String[] args) {
 		done = new AtomicBoolean(false);
 		pause = new AtomicBoolean(false);
 		won = new AtomicBoolean(false);
+		pressedStart = new AtomicBoolean(false);
 		
 		totalWords=24;
 		noWords=6;
@@ -302,13 +328,10 @@ public static void main(String[] args) {
 		
 		words = new FallingWord[noWords];  //array for the  current chosen words from dict
 		wrdShft = new WordMover[noWords]; //array for the threads that animate the words
-		
-		CatchWord.setWords(words);  //class setter - static method
+		hungryWordDict = new FallingWord(dict.getNewWord(),0,yLimit);
+		CatchWord.setWords(words,hungryWordDict);  //class setter - static method
 		CatchWord.setScore(score);  //class setter - static method
 		CatchWord.setFlags(done,pause); //class setter - static method
-		
-		//HungryWordMover.setFlags(done, pause);
-		//HungryWordMover.setScore(score);
 
 		setupGUI(frameX, frameY, yLimit);  
 	

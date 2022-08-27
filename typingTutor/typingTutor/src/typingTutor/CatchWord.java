@@ -9,12 +9,14 @@ import java.util.concurrent.atomic.AtomicBoolean;
  * Date created 17/08/22
  * @version 1
  */
+
 public class CatchWord extends Thread {
-	String target; //word that is a duplicate
+	String target;
 	static AtomicBoolean done ;
 	static AtomicBoolean pause; 
 	
 	private static  FallingWord[] words; //list of words
+	private static FallingWord hungryWord;
 	private static int noWords; //how many
 	private static Score score; //user score
 	
@@ -29,16 +31,19 @@ public class CatchWord extends Thread {
 	/**
 	 * setWords method to set the pass by reference the FallingWords array
 	 * @param wordList the array reference
+	 * @param hung the FallingWord object for the Hungry Word
 	 */
-	public static synchronized void setWords(FallingWord[] wordList) {
+	public static void setWords(FallingWord[] wordList, FallingWord hung) {
 		words=wordList;	
 		noWords = words.length;
+		hungryWord = hung;
 	}
+	
 	/**
 	 * sharedScore method to share the Score object by reference
 	 * @param sharedScore the score object
 	 */
-	public static synchronized void setScore(Score sharedScore) {
+	public static void setScore(Score sharedScore) {
 		score=sharedScore;
 	}
 	
@@ -47,7 +52,7 @@ public class CatchWord extends Thread {
 	 * @param d to signal done
 	 * @param p to signal paused
 	 */
-	public static synchronized void setFlags(AtomicBoolean d, AtomicBoolean p) {
+	public static void setFlags(AtomicBoolean d, AtomicBoolean p) {
 		done=d;
 		pause=p;
 	}
@@ -57,12 +62,11 @@ public class CatchWord extends Thread {
 	 */
 	public void run() {
 		int i=0;
-		
-		while (i<noWords) {	//loops while the number of words are not reached
+		while (i<noWords) {		
 			while(pause.get()) {};
-			if (words[i].matchWord(target)) { //checks if the words are the same 
+			if (words[i].matchWord(target)||hungryWord.matchWord(target)) { //
 				System.out.println( " score! '" + target); //for checking
-				score.caughtWord(target.length());	// computes the length of the word that is catched and adds it to the total score of the player
+				score.caughtWord(target.length());	
 				//FallingWord.increaseSpeed();
 				break;
 			}

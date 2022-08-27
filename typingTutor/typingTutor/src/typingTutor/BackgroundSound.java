@@ -2,7 +2,8 @@ package typingTutor;
 
 import java.io.File;
 import java.io.IOException;
- 
+import java.util.concurrent.atomic.AtomicBoolean;
+
 import javax.sound.sampled.AudioFormat;
 import javax.sound.sampled.AudioInputStream;
 import javax.sound.sampled.AudioSystem;
@@ -27,6 +28,9 @@ public class BackgroundSound extends Thread implements LineListener{
 
     String audioFilePath; // audio file path
     File audioFile; // audio file
+    AtomicBoolean pause;
+    long clipTimePosition = 0;
+
     /**
      * BackgroundSound constructor with a single parameter
      * @param audio the path of the audio file
@@ -34,6 +38,7 @@ public class BackgroundSound extends Thread implements LineListener{
     public BackgroundSound(String audio){
         audioFilePath = audio;
         audioFile = new File(audioFilePath); // create the audio path connection
+        this.pause = pause;
     }
 
 
@@ -53,6 +58,7 @@ public class BackgroundSound extends Thread implements LineListener{
             audioClip.open(audioStream); // open the audio clip
              
             audioClip.loop(Clip.LOOP_CONTINUOUSLY); // run the audio repeatedly
+           
         
              
         } catch (UnsupportedAudioFileException ex) { // error handle for unsupported audio file
@@ -78,5 +84,3 @@ public class BackgroundSound extends Thread implements LineListener{
         }
     }
 }
- 
-
