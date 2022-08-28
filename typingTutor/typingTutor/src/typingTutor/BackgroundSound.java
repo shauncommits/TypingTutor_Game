@@ -1,6 +1,7 @@
 package typingTutor;
 
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -60,7 +61,8 @@ public class BackgroundSound extends Thread implements LineListener{
             audioClip.loop(Clip.LOOP_CONTINUOUSLY); // run the audio repeatedly
            
         
-             
+        } catch(FileNotFoundException e){ // error handler to inform the user which folder to use to run the app
+            System.out.println("To hear the background sound, run the code inside the folder with the Makefile :)");
         } catch (UnsupportedAudioFileException ex) { // error handle for unsupported audio file
             System.out.println("The specified audio file is not supported.");
             ex.printStackTrace();
