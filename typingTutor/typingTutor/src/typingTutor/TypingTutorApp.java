@@ -337,6 +337,7 @@ public static void main(String[] args) {
 		words = new FallingWord[noWords];  //array for the  current chosen words from dict
 		wrdShft = new WordMover[noWords]; //array for the threads that animate the words
 		hungryWordDict = new FallingWord(dict.getNewWord(),0,yLimit);
+		
 		CatchWord.setWords(words,hungryWordDict);  //class setter - static method
 		CatchWord.setScore(score);  //class setter - static method
 		CatchWord.setFlags(done,pause); //class setter - static method
