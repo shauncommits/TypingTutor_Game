@@ -4,6 +4,7 @@ import javax.swing.*;
 import java.awt.Color;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.util.Scanner;
@@ -56,6 +57,8 @@ public class TypingTutorApp {
 
 	//the QuitGameButton
 	static JButton quitB = new JButton("Quit Game");;
+
+	static String filePath = "";
 
 	/**
 	 * setupGUI method 
@@ -245,8 +248,12 @@ public class TypingTutorApp {
 		obj = new DuplicateRemover(words,hungryWordDict,wrdShft,score);
 		obj.start();
 
+		// get the absolute path from any machine the person runs the code for the audio file
+		File file = new File("typingTutor/typingTutor/src/typingTutor/both-of-us-14037.wav");
+		filePath = file.getAbsolutePath(); 
+
 		// Instantiate and start the BackgroundSound Thread
-		audio = new BackgroundSound("typingTutor/typingTutor/src/typingTutor/both-of-us-14037.wav");
+		audio = new BackgroundSound(filePath);
 		audio.start();
 	}
 	
