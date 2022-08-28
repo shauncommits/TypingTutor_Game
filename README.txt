@@ -1,6 +1,6 @@
 The Typing Tutor App
 
-To run the app you must be inside the MBLSHA003_CSC2002SPCP2 folder. From
+To run the app you must be inside the MBLSHA003_CSC2002SPCP2 folder, where you find the Makefile. From
 this folder open the terminal and run make clean first so that the program
 can be compiled by your java version during compilation.
 
