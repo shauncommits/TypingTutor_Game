@@ -82,33 +82,34 @@ public class GamePanel extends JPanel implements Runnable {
 		}
 		
 		public void paintComponent(Graphics g) {
-		    int width = getWidth(); 
-		    int height = getHeight()-borderWidth*2;
+		    int width = getWidth(); // width of the active space
+		    int height = getHeight()-borderWidth*2; // height of the active space
 		    g.clearRect(0,0,width+50,height+50);//the active space
 		    g.setColor(Color.pink); //change colour of pen
 		    g.fillRect(borderWidth,height,width-50,borderWidth); //draw danger zone
 
-		    g.setColor(Color.black);
+			// set the color of words to black with a font of 26
+		    g.setColor(Color.black); 
 		    g.setFont(new Font("Arial", Font.PLAIN, 26));
 			
 		   //draw the words
-		    if (!started.get()) {
+		    if (!started.get()) { // when the game start
 		    	g.setFont(new Font("Arial", Font.BOLD, 26));
 				g.drawString("Type all the words before they hit the red zone,press enter after each one.",borderWidth*2,height/2);	
 		    	paus.setEnabled(false);
 				quit.setEnabled(false);
 		    }
-		    else if (!done.get()) {
+		    else if (!done.get()) { // when the game is still on 
 		    	for (int i=0;i<noWords;i++){	    	
 		    		g.drawString(words[i].getWord(),words[i].getX()+borderWidth,words[i].getY());	
 					
 		    	}
 				
-				g.setColor(Color.green); //change colour of pen
+				g.setColor(Color.green); //change colour of the pen to green to write the hungry word
 				g.drawString(hungryWord.getWord(), hungryWord.getX()+borderWidth,hungryWord.getY());
 				
 				
-				//g.setColor(Color.);
+				// when the number of missed words is 2, signal to the player by a red bar on top
 				if(score.getMissed()==2){
 					g.setColor(Color.red); //change colour of pen
 		    		g.fillRect(borderWidth,0,width-50,borderWidth);
@@ -121,21 +122,23 @@ public class GamePanel extends JPanel implements Runnable {
 				
 				
 		   }
-		   else { if (won.get()) {
+		   else { if (won.get()) { // when the game has been won, the following words are displayed
 			   g.setFont(new Font("Arial", Font.BOLD, 36));
 			   g.drawString("Well done!",width/3,height/2);	
 			
 		   } 
-		   else if(pressedStart.get()){
+		   else if(pressedStart.get()){ // when the user presses the start button to many times, the user is notified and consequently the threads of the earlier game are terminated and new threads created
+				// the user is notified by the following statement
 				g.setFont(new Font("Arial", Font.BOLD, 24));
 				g.drawString("You pressed the start button again while the game already started!",borderWidth,height/4);
 				g.drawString("Next time if you want to quit the game, just press the Quit Game button!",borderWidth,height/3);
 				g.drawString("You can press the start button again if you want to restart the game or",borderWidth,height/2);
 				g.drawString("the exit button to exit the Game!",borderWidth,height/2+40);
 		   }
-		   else {
+		   else { // when the game is over
 			   g.setFont(new Font("Arial", Font.BOLD, 36));
 			   g.drawString("Game over!",width/2,height/2);	
+			   TypingTutorApp.count.set(0); // reset the count to zero again
 		   }
 		   }
 		}

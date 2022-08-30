@@ -219,22 +219,6 @@ public class FallingWord {
 		return dropped.get();
 	}
 	
-	/**
-	 * sameWord method to check the words if they are the same
-	 * @param fallW is a FallingWord object
-	 * @return true or false if the words are the same
-	 */
-	public synchronized boolean sameWord(FallingWord fallW){
-		if(fallW.getWord().equals(this.getWord())){
-			if(fallW.getY()>this.getY()){
-			    fallW.resetWord();
-				return true;
-			}
-			this.resetWord();
-			return true;
-		}
-		return false;
-	}
 
 	/**
 	 * wordPixelLenght method

@@ -10,6 +10,7 @@ import java.io.IOException;
 import java.util.Scanner;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * TypingTutorApp class to run all the threads and also the setUp the GUI environment for the game
@@ -31,7 +32,7 @@ public class TypingTutorApp {
 
 	static WordDictionary dict = new WordDictionary(); //use default dictionary, to read from file eventually
 
-	static FallingWord[] words;
+	static FallingWord[] words; 
 	static WordMover[] wrdShft;
 	static FallingWord hungryWordDict;
 	static BackgroundSound audio;
@@ -50,7 +51,7 @@ public class TypingTutorApp {
 	static ScoreUpdater scoreD ;
 	static Thread gameWindowThread;
 	static Thread scoreThread;
-	static int count = 0; // count the number of times the user presses the start button
+	static AtomicInteger count = new AtomicInteger(0); // count the number of times the user presses the start button
 
 	//the Pause Button
 	static JButton pauseB = new JButton("Pause");
@@ -81,10 +82,12 @@ public class TypingTutorApp {
         g.setLayout(new BoxLayout(g, BoxLayout.PAGE_AXIS)); 
       	g.setSize(frameX,frameY);
  
+		// intantiate the GamePanel object
 		gameWindow = new GamePanel(words,hungryWordDict,score,yLimit,done,started,won,pressedStart, quitB, pauseB);
 		gameWindow.setSize(frameX,yLimit+100);
 	    g.add(gameWindow);
 	    
+		// set the panel for the text
 	    JPanel txt = new JPanel();
 	    txt.setLayout(new BoxLayout(txt, BoxLayout.LINE_AXIS)); 
 	    JLabel caught =new JLabel("Caught: " + score.getCaught() + "    ");
@@ -93,12 +96,12 @@ public class TypingTutorApp {
 	    missed.setForeground(Color.red);
 	    JLabel scr =new JLabel("Score:" + score.getScore()+ "    ");   
 	    
-		// put the labels in the text panel
+		// put the text in the text panel
 	    txt.add(caught);
 	    txt.add(missed);
 	    txt.add(scr);
     
-	    scoreD = new ScoreUpdater(caught, missed,scr,score,done,won,totalWords);      //thread to update score
+	    scoreD = new ScoreUpdater(caught, missed,scr,score,done,won,totalWords);  //thread to update score
        
 		// the textField area to reach the word typed by the user
 	   final JTextField textEntry = new JTextField("",20);
@@ -140,10 +143,10 @@ public class TypingTutorApp {
 		    	if (pause.get()) { //this is a restart from pause
 		    		pause.set(false);
 				}
-				else if(count>0){ // checks how many times the start button is pressed during the game, this is an error from the user though. However, it is gracefully handled
+				else if(count.get()>0){ // checks how many times the start button is pressed during the game, this is an error from the user though. However, it is gracefully handled
 					done.set(true); // ends the threads
 					pressedStart.set(true); // gracefully inform the user of the error
-					count = 0; // reset count
+					count.set(0); // reset count
 					pauseB.setEnabled(false);
 					quitB.setEnabled(false);
 					textEntry.setEnabled(false);
@@ -157,7 +160,7 @@ public class TypingTutorApp {
 					startLatch = new CountDownLatch(1); //so threads can start at once
 					createWordMoverThreads();   	 //create new threads for next game 
 			    	startLatch.countDown(); //set wordMovers going - must have barrier[]
-					count++;
+					count.getAndIncrement();
 		    	}
 		    	textEntry.requestFocus();
 				//done.set(true);
@@ -191,7 +194,7 @@ public class TypingTutorApp {
 					
 					 	pauseB.setEnabled(false);
 						textEntry.setEnabled(false);
-						count=0;
+						count.set(0);
 
 						 //word movers waiting on starting line
 					   	for (int i=0;i<noWords;i++) {
@@ -308,6 +311,7 @@ public static synchronized String[] getDictFromFile(String filename) {
  * @param args take any number of arguments
  */
 public static void main(String[] args) {
+		// initialize the atomic variables
 		started=new AtomicBoolean(false);
 		done = new AtomicBoolean(false);
 		pause = new AtomicBoolean(false);

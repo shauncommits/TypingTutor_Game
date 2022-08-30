@@ -39,7 +39,6 @@ public class BackgroundSound extends Thread implements LineListener{
     public BackgroundSound(String audio){
         audioFilePath = audio;
         audioFile = new File(audioFilePath); // create the audio path connection
-        this.pause = pause;
     }
 
 
